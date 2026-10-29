@@ -1,5 +1,6 @@
-import { BasesView, Keymap, moment, QueryController, setIcon, setTooltip, TFile } from 'obsidian';
+import { BasesView, Keymap, QueryController, setIcon, setTooltip, TFile } from 'obsidian';
 import { BASES_VIEW_PEOPLE, BASES_VIEW_TIMELINE } from './constants';
+import { dates } from './dates';
 import { formatDuration, formatGroupHeading, localDateKey, Meeting, meetingsWithPerson } from './meetings';
 import type ShadowMeetingsPlugin from './main';
 import { meetingFromFile, meetingPathsLinkedFrom, personForFile } from './source';
@@ -46,12 +47,12 @@ function firstName(name: string): string {
 function shortDay(dateKey: string, todayKey: string): string {
 	const heading = formatGroupHeading(dateKey, todayKey);
 	if (heading === 'Today' || heading === 'Yesterday') return heading;
-	const day = moment(dateKey, 'YYYY-MM-DD');
-	return day.format(day.year() === moment().year() ? 'MMM D' : 'MMM D, YYYY');
+	const day = dates(dateKey, 'YYYY-MM-DD');
+	return day.format(day.year() === dates().year() ? 'MMM D' : 'MMM D, YYYY');
 }
 
 function firstDayOfWeek(): number {
-	return moment.localeData().firstDayOfWeek();
+	return dates.localeData().firstDayOfWeek();
 }
 
 function entryFiles(view: BasesView): TFile[] {
@@ -111,7 +112,7 @@ export class ShadowTimelineView extends BasesView {
 		const sameYear = this.week.getFullYear() === last.getFullYear();
 		toolbar.createDiv({
 			cls: 'shadow-meetings-timeline-range',
-			text: `${moment(this.week).format(sameYear ? 'MMM D' : 'MMM D, YYYY')} – ${moment(last).format('MMM D, YYYY')}`,
+			text: `${dates(this.week).format(sameYear ? 'MMM D' : 'MMM D, YYYY')} – ${dates(last).format('MMM D, YYYY')}`,
 		});
 		const summary =
 			week.meetingCount === 0
@@ -143,8 +144,8 @@ export class ShadowTimelineView extends BasesView {
 		for (const day of week.days) {
 			const head = grid.createDiv({ cls: 'shadow-meetings-timeline-dayhead' });
 			if (day.key === todayKey) head.addClass('is-today');
-			head.createSpan({ cls: 'shadow-meetings-timeline-weekday', text: moment(day.date).format('ddd') });
-			head.createSpan({ cls: 'shadow-meetings-timeline-daynum', text: moment(day.date).format('D') });
+			head.createSpan({ cls: 'shadow-meetings-timeline-weekday', text: dates(day.date).format('ddd') });
+			head.createSpan({ cls: 'shadow-meetings-timeline-daynum', text: dates(day.date).format('D') });
 		}
 
 		if (week.days.some((day) => day.untimed.length > 0)) {

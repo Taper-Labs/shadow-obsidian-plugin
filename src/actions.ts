@@ -1,6 +1,7 @@
-import { App, moment, normalizePath, Notice, TFile } from 'obsidian';
+import { App, normalizePath, Notice, TFile } from 'obsidian';
 import { BASE_FILE_NAME, buildMeetingsBase } from './bases';
 import { BASES_VIEW_TIMELINE } from './constants';
+import { dates } from './dates';
 import { insertMeetingLines } from './daily-note';
 import { localDateKey, meetingsOnDate } from './meetings';
 import type ShadowMeetingsPlugin from './main';
@@ -65,7 +66,7 @@ function dailyNoteOptions(app: App): DailyNoteOptions | null {
 export function todaysDailyNotePath(app: App): string | null {
 	const options = dailyNoteOptions(app);
 	if (!options) return null;
-	const name = moment().format(options.format?.trim() || 'YYYY-MM-DD');
+	const name = dates().format(options.format?.trim() || 'YYYY-MM-DD');
 	const folder = options.folder?.trim().replace(/^\/+|\/+$/gu, '') ?? '';
 	return normalizePath(folder ? `${folder}/${name}.md` : `${name}.md`);
 }
