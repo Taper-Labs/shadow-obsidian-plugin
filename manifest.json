@@ -1,0 +1,10 @@
+{
+	"id": "shadow-meetings",
+	"name": "Shadow Meetings",
+	"version": "1.0.0",
+	"minAppVersion": "1.7.2",
+	"description": "Requires the Shadow Mac app (Apple Silicon, macOS 14.2+), which records meetings without a bot and transcribes them on device. This plugin only reads the meeting pages Shadow already saved in your vault and lists them by date.",
+	"author": "Taper Labs",
+	"authorUrl": "https://www.shadow.do",
+	"isDesktopOnly": true
+}
