@@ -1,6 +1,6 @@
 {
 	"name": "shadow-meetings",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"description": "Obsidian plugin that lists the meeting pages the Shadow Mac app saves in your vault.",
 	"main": "main.js",
 	"type": "module",
