@@ -33,8 +33,8 @@ export default defineConfig(
 	...obsidianmd.configs.recommended,
 	{
 		rules: {
-			// "Shadow" is the name of the Mac app this plugin reads from.
-			'obsidianmd/ui/sentence-case': ['warn', { ignoreWords: ['Shadow', 'Mac'] }],
+			// "Shadow" is the Mac app this plugin reads from; "Bases" is a core plugin.
+			'obsidianmd/ui/sentence-case': ['warn', { ignoreWords: ['Shadow', 'Mac', 'Bases'] }],
 		},
 	},
 );

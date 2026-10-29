@@ -5,12 +5,15 @@ import { detectFolders } from './source';
 export interface ShadowMeetingsSettings {
 	/** Folder Shadow writes to, relative to the vault root. Empty means detect it. */
 	shadowFolder: string;
-	/** Set once the list has been added to the sidebar on first run. */
+	/** Turns on the command that adds today's meetings to the daily note. */
+	dailyNoteLinks: boolean;
+	/** Set once the views have been added to the sidebar on first run. */
 	listAddedOnce: boolean;
 }
 
 export const DEFAULT_SETTINGS: ShadowMeetingsSettings = {
 	shadowFolder: '',
+	dailyNoteLinks: false,
 	listAddedOnce: false,
 };
 
@@ -61,6 +64,18 @@ export class ShadowMeetingsSettingTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 						this.display();
 					}),
+			);
+
+		new Setting(containerEl)
+			.setName('Daily note links')
+			.setDesc(
+				"Adds the command to link today's meetings in today's daily note. The plugin writes to the daily note only when you run it, and never changes the pages Shadow manages.",
+			)
+			.addToggle((toggle) =>
+				toggle.setValue(this.plugin.settings.dailyNoteLinks).onChange(async (value) => {
+					this.plugin.settings.dailyNoteLinks = value;
+					await this.plugin.saveSettings();
+				}),
 			);
 	}
 }

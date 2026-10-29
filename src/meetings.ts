@@ -10,7 +10,10 @@
 // Meeting page frontmatter: type: meeting, title, date (local calendar day),
 // createdAt, startedAt, endedAt. Timestamps look like
 // "2026-10-15 15:36:01 UTC" or "2026-10-15 15:36 GMT+09:00", or null.
-// Attendees are a `## Attendees` table whose names link to People pages.
+// Attendees are a `## Attendees` table whose names link to People pages;
+// `## Materials` links the Transcript, Notes, Screenshots and Skill results.
+
+import { addPerson, PersonRef, samePerson } from './people';
 
 export interface Meeting {
 	path: string;
@@ -19,7 +22,9 @@ export interface Meeting {
 	date: string | null;
 	startedAt: Date | null;
 	endedAt: Date | null;
+	/** Attendee names, for display. */
 	attendees: string[];
+	people: PersonRef[];
 }
 
 export interface MeetingGroup {
@@ -109,44 +114,32 @@ export function isMeetingFrontmatter(frontmatter: Record<string, unknown> | null
 	return typeof type === 'string' && type.trim().toLowerCase() === 'meeting';
 }
 
-function linkLabel(link: LinkRef): string {
-	const display = link.displayText?.trim();
-	if (display) return display;
-	const target = link.link.split('#')[0] ?? '';
-	const base = target.split('/').pop() ?? '';
-	// Person pages are named `<name> (<email>)`.
-	return base.replace(/\s*\([^()]*@[^()]*\)$/u, '').trim();
-}
-
-/** Names linked from the `## Attendees` section, in order, without duplicates. */
-export function attendeesFromLinks(headings: HeadingRef[], links: LinkRef[]): string[] {
-	const start = headings.find((h) => h.heading.trim().toLowerCase() === 'attendees');
+/** Links inside the section under the heading named `heading`, in order. */
+export function linksInSection(headings: HeadingRef[], links: LinkRef[], heading: string): LinkRef[] {
+	const wanted = heading.trim().toLowerCase();
+	const start = headings.find((h) => h.heading.trim().toLowerCase() === wanted);
 	if (!start) return [];
 	const end = headings.find((h) => h.offset > start.offset && h.level <= start.level);
-	const names: string[] = [];
-	for (const link of links) {
-		if (link.offset <= start.offset) continue;
-		if (end && link.offset >= end.offset) continue;
-		const name = linkLabel(link);
-		if (name && !names.includes(name)) names.push(name);
-	}
-	return names;
+	return links.filter((link) => link.offset > start.offset && (!end || link.offset < end.offset));
 }
 
-function attendeesFromFrontmatter(value: unknown): string[] {
+/** People from an `attendees` property, if a page has one: names, links or {name, email}. */
+function peopleFromFrontmatter(value: unknown): PersonRef[] {
 	if (!Array.isArray(value)) return [];
-	const names: string[] = [];
+	const people: PersonRef[] = [];
 	for (const entry of value) {
 		let name = '';
+		let email: string | null = null;
 		if (typeof entry === 'string') name = entry;
-		else if (entry && typeof entry === 'object' && 'name' in entry) {
-			const candidate = (entry as { name: unknown }).name;
-			if (typeof candidate === 'string') name = candidate;
+		else if (entry && typeof entry === 'object') {
+			const record = entry as Record<string, unknown>;
+			if (typeof record['name'] === 'string') name = record['name'];
+			if (typeof record['email'] === 'string') email = record['email'];
 		}
 		name = name.replace(/^\[\[(?:[^\]|]*\|)?([^\]]*)\]\]$/u, '$1').trim();
-		if (name && !names.includes(name)) names.push(name);
+		if (name) addPerson(people, { name, email, path: null });
 	}
-	return names;
+	return people;
 }
 
 function fileBaseName(path: string): string {
@@ -157,7 +150,7 @@ function fileBaseName(path: string): string {
 export function meetingFromPage(
 	path: string,
 	frontmatter: Record<string, unknown> | null | undefined,
-	bodyAttendees: string[] = [],
+	bodyPeople: PersonRef[] = [],
 ): Meeting | null {
 	if (!frontmatter || !isMeetingFrontmatter(frontmatter)) return null;
 	const rawTitle = frontmatter['title'];
@@ -166,9 +159,9 @@ export function meetingFromPage(
 		parseShadowTimestamp(frontmatter['startedAt']) ?? parseShadowTimestamp(frontmatter['createdAt']);
 	const endedAt = parseShadowTimestamp(frontmatter['endedAt']);
 	const date = parseDateKey(frontmatter['date']) ?? (startedAt ? localDateKey(startedAt) : null);
-	const attendees = attendeesFromFrontmatter(frontmatter['attendees']);
-	for (const name of bodyAttendees) if (!attendees.includes(name)) attendees.push(name);
-	return { path, title, date, startedAt, endedAt, attendees };
+	const people = peopleFromFrontmatter(frontmatter['attendees']);
+	for (const person of bodyPeople) addPerson(people, person);
+	return { path, title, date, startedAt, endedAt, attendees: people.map((p) => p.name), people };
 }
 
 function trimSlashes(folder: string): string {
@@ -248,6 +241,35 @@ export function groupMeetingsByDate(meetings: Meeting[]): MeetingGroup[] {
 			return b.localeCompare(a);
 		})
 		.map(([key, list]) => ({ key, meetings: list }));
+}
+
+/**
+ * Meetings a person attended, newest first: the person is in the Attendees,
+ * or the meeting is linked from the person's own page.
+ */
+export function meetingsWithPerson(
+	meetings: Meeting[],
+	person: PersonRef,
+	linkedPaths: ReadonlySet<string> = new Set(),
+): Meeting[] {
+	return sortMeetings(
+		meetings.filter((m) => linkedPaths.has(m.path) || m.people.some((p) => samePerson(p, person))),
+	);
+}
+
+/** The latest meeting with this person before `current`, or null. */
+export function previousMeetingWith(meetings: Meeting[], person: PersonRef, current: Meeting): Meeting | null {
+	const before = sortTime(current);
+	return (
+		meetingsWithPerson(meetings, person).find((m) => m.path !== current.path && sortTime(m) < before) ?? null
+	);
+}
+
+const AUDIO_FILE_NAMES = ['audio.m4a', 'audio.wav', 'mergedaudio.m4a', 'mergedaudio.wav'];
+
+/** Shadow names a meeting's recording `Audio.m4a`, `Audio.wav` or `MergedAudio.*`. */
+export function isMeetingAudio(fileName: string): boolean {
+	return AUDIO_FILE_NAMES.includes(fileName.toLowerCase());
 }
 
 export function meetingsOnDate(meetings: Meeting[], dateKey: string): Meeting[] {

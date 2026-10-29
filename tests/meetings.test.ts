@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import {
-	attendeesFromLinks,
 	detectShadowFolders,
 	formatAttendees,
 	formatDuration,
@@ -8,15 +7,20 @@ import {
 	groupMeetingsByDate,
 	HeadingRef,
 	isInMeetingsFolder,
+	isMeetingAudio,
 	LinkRef,
+	linksInSection,
 	localDateKey,
 	Meeting,
 	meetingFromPage,
 	meetingsOnDate,
+	meetingsWithPerson,
 	parseDateKey,
 	parseShadowTimestamp,
+	previousMeetingWith,
 	UNDATED_KEY,
 } from '../src/meetings';
+import { PersonRef, personFromLink } from '../src/people';
 
 // A meeting page exactly as the Shadow Mac app writes it (2.4.x export).
 const MEETING_PAGE = `---
@@ -63,7 +67,19 @@ function cacheOf(markdown: string): { headings: HeadingRef[]; links: LinkRef[] }
 }
 
 function meeting(partial: Partial<Meeting> & { title: string }): Meeting {
-	return { path: `${partial.title}.md`, date: null, startedAt: null, endedAt: null, attendees: [], ...partial };
+	return {
+		path: `${partial.title}.md`,
+		date: null,
+		startedAt: null,
+		endedAt: null,
+		attendees: [],
+		people: [],
+		...partial,
+	};
+}
+
+function person(name: string, email: string | null = null): PersonRef {
+	return { name, email, path: null };
 }
 
 describe('parseShadowTimestamp', () => {
@@ -107,20 +123,34 @@ describe('parseDateKey', () => {
 	});
 });
 
-describe('attendeesFromLinks', () => {
-	it('takes only the people linked in the Attendees table', () => {
+describe('linksInSection', () => {
+	it('takes only the people linked in the Attendees table, not the speakers', () => {
 		const { headings, links } = cacheOf(MEETING_PAGE);
-		expect(attendeesFromLinks(headings, links)).toEqual(['Cakie', 'Priya Raman']);
+		const attendees = linksInSection(headings, links, 'Attendees').map((l) =>
+			personFromLink(l.link, l.displayText, null),
+		);
+		expect(attendees).toEqual([
+			{ name: 'Cakie', email: 'cakie.ai.official@gmail.com', path: null },
+			{ name: 'Priya Raman', email: 'priya@example.com', path: null },
+		]);
 	});
 
-	it('falls back to the Person file name without the email', () => {
-		const headings = [{ heading: 'Attendees', level: 2, offset: 0 }];
-		const links = [{ link: 'People/Dana Lee (dana@example.com)', offset: 10 }];
-		expect(attendeesFromLinks(headings, links)).toEqual(['Dana Lee']);
+	it('takes the Materials links', () => {
+		const { headings, links } = cacheOf(MEETING_PAGE);
+		expect(linksInSection(headings, links, 'materials').map((l) => l.displayText)).toEqual(['Transcript']);
 	});
 
-	it('returns nothing when there is no Attendees section', () => {
-		expect(attendeesFromLinks([], [{ link: 'People/A', offset: 1 }])).toEqual([]);
+	it('returns nothing when the section is missing', () => {
+		expect(linksInSection([], [{ link: 'People/A', offset: 1 }], 'Attendees')).toEqual([]);
+	});
+});
+
+describe('isMeetingAudio', () => {
+	it('recognizes the audio file names Shadow writes', () => {
+		expect(isMeetingAudio('Audio.m4a')).toBe(true);
+		expect(isMeetingAudio('MergedAudio.wav')).toBe(true);
+		expect(isMeetingAudio('Transcript.md')).toBe(false);
+		expect(isMeetingAudio('Interview audio.m4a')).toBe(false);
 	});
 });
 
@@ -137,12 +167,13 @@ describe('meetingFromPage', () => {
 		'Shadow/Meetings/2026/10/2026-10-16 Modern Taste and Success Update/Modern Taste and Success Update.md';
 
 	it('builds a meeting from the frontmatter Shadow writes', () => {
-		const result = meetingFromPage(path, frontmatter, ['Cakie']);
+		const result = meetingFromPage(path, frontmatter, [person('Cakie', 'cakie.ai.official@gmail.com')]);
 		expect(result).toMatchObject({
 			path,
 			title: 'Modern Taste and Success Update',
 			date: '2026-10-16',
 			attendees: ['Cakie'],
+			people: [{ name: 'Cakie', email: 'cakie.ai.official@gmail.com', path: null }],
 		});
 		expect(result?.startedAt?.toISOString()).toBe('2026-10-15T15:36:01.000Z');
 		expect(result?.endedAt?.toISOString()).toBe('2026-10-15T15:37:36.000Z');
@@ -172,7 +203,7 @@ describe('meetingFromPage', () => {
 		const result = meetingFromPage(
 			'm.md',
 			{ type: 'meeting', attendees: ['[[People/Ann (ann@x.io)|Ann]]', { name: 'Bo' }, 'Ann'] },
-			['Bo', 'Cy'],
+			[person('Bo'), person('Cy', 'cy@x.io')],
 		);
 		expect(result?.attendees).toEqual(['Ann', 'Bo', 'Cy']);
 	});
@@ -288,5 +319,45 @@ describe('formatting', () => {
 		expect(formatAttendees([])).toBeNull();
 		expect(formatAttendees(['A', 'B'])).toBe('A, B');
 		expect(formatAttendees(['A', 'B', 'C', 'D', 'E'])).toBe('A, B, C +2');
+	});
+});
+
+describe('meetings with a person', () => {
+	const priya = { name: 'Priya Raman', email: 'priya@northwind.dev', path: 'Shadow/People/Priya Raman (priya@northwind.dev).md' };
+	const at = (iso: string) => new Date(iso);
+	const list = [
+		meeting({ title: 'Sync 3', date: '2026-10-29', startedAt: at('2026-10-29T00:30:00Z'), people: [person('Priya R.', 'PRIYA@northwind.dev')] }),
+		meeting({ title: 'Design review', date: '2026-10-28', startedAt: at('2026-10-28T07:00:00Z'), people: [person('Lena Park', 'lena@northwind.dev')] }),
+		meeting({ title: 'Sync 2', date: '2026-10-22', startedAt: at('2026-10-22T00:30:00Z'), people: [person('Priya Raman', 'priya@northwind.dev')] }),
+		meeting({ title: 'Other Priya', date: '2026-10-20', startedAt: at('2026-10-20T00:30:00Z'), people: [person('Priya Raman', 'priya@other.com')] }),
+		meeting({ title: 'No-email Priya', date: '2026-10-18', startedAt: at('2026-10-18T00:30:00Z'), people: [person('Priya Raman')] }),
+		meeting({ title: 'Sync 1', date: '2026-10-15', startedAt: at('2026-10-15T00:30:00Z'), people: [person('Priya Raman', 'priya@northwind.dev')] }),
+	];
+
+	it('matches by email first, ignoring the name and case', () => {
+		expect(meetingsWithPerson(list, priya).map((m) => m.title)).toEqual(['Sync 3', 'Sync 2', 'Sync 1']);
+	});
+
+	it('matches a no-email person by normalized name only', () => {
+		const kim = person('  Priya   RAMAN ');
+		expect(meetingsWithPerson(list, kim).map((m) => m.title)).toEqual(['No-email Priya']);
+		expect(meetingsWithPerson(list, person('Ｐriya Raman')).map((m) => m.title)).toEqual(['No-email Priya']);
+	});
+
+	it("includes meetings linked from the person's page", () => {
+		const linked = new Set(['Design review.md']);
+		expect(meetingsWithPerson(list, priya, linked).map((m) => m.title)).toEqual([
+			'Sync 3',
+			'Design review',
+			'Sync 2',
+			'Sync 1',
+		]);
+	});
+
+	it('finds the last meeting before the current one', () => {
+		const current = list[0] as Meeting;
+		expect(previousMeetingWith(list, priya, current)?.title).toBe('Sync 2');
+		expect(previousMeetingWith(list, priya, list[5] as Meeting)).toBeNull();
+		expect(previousMeetingWith(list, person('Lena Park', 'lena@northwind.dev'), current)?.title).toBe('Design review');
 	});
 });

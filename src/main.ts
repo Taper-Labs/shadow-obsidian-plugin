@@ -1,5 +1,7 @@
 import { debounce, Notice, PaneType, Plugin, TFile } from 'obsidian';
-import { SHADOW_APP_URL, VIEW_TYPE_MEETINGS } from './constants';
+import { addTodaysMeetingsToDailyNote, createMeetingViews } from './actions';
+import { SHADOW_APP_URL, VIEW_TYPE_CONTEXT, VIEW_TYPE_MEETINGS } from './constants';
+import { MeetingContextView } from './context-view';
 import { localDateKey, Meeting, meetingsOnDate } from './meetings';
 import { TodayMeetingsModal } from './modal';
 import { DEFAULT_SETTINGS, ShadowMeetingsSettings, ShadowMeetingsSettingTab } from './settings';
@@ -14,6 +16,9 @@ export default class ShadowMeetingsPlugin extends Plugin {
 			for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE_MEETINGS)) {
 				if (leaf.view instanceof MeetingsView) leaf.view.refresh();
 			}
+			for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE_CONTEXT)) {
+				if (leaf.view instanceof MeetingContextView) leaf.view.refresh();
+			}
 		},
 		500,
 		true,
@@ -23,6 +28,7 @@ export default class ShadowMeetingsPlugin extends Plugin {
 		await this.loadSettings();
 
 		this.registerView(VIEW_TYPE_MEETINGS, (leaf) => new MeetingsView(leaf, this));
+		this.registerView(VIEW_TYPE_CONTEXT, (leaf) => new MeetingContextView(leaf, this));
 
 		this.addRibbonIcon('app-window', 'Open Shadow', () => this.openShadowApp());
 
@@ -30,7 +36,28 @@ export default class ShadowMeetingsPlugin extends Plugin {
 			id: 'show-meetings',
 			name: 'Show meetings list',
 			callback: () => {
-				void this.activateView();
+				void this.activateView(VIEW_TYPE_MEETINGS);
+			},
+		});
+		this.addCommand({
+			id: 'show-context',
+			name: 'Show meeting context',
+			callback: () => {
+				void this.activateView(VIEW_TYPE_CONTEXT);
+			},
+		});
+		this.addCommand({
+			id: 'create-meeting-views',
+			name: 'Create Shadow meeting views',
+			callback: () => createMeetingViews(this),
+		});
+		this.addCommand({
+			id: 'add-today-to-daily-note',
+			name: "Add today's meetings to the daily note",
+			checkCallback: (checking) => {
+				if (!this.settings.dailyNoteLinks) return false;
+				if (!checking) void addTodaysMeetingsToDailyNote(this);
+				return true;
 			},
 		});
 		this.addCommand({
@@ -52,6 +79,7 @@ export default class ShadowMeetingsPlugin extends Plugin {
 		this.registerEvent(this.app.vault.on('delete', () => this.refreshViews()));
 		this.registerEvent(this.app.vault.on('rename', () => this.refreshViews()));
 		this.registerEvent(this.app.workspace.on('file-open', () => this.refreshViews()));
+		this.registerEvent(this.app.workspace.on('active-leaf-change', () => this.refreshViews()));
 		this.registerEvent(this.app.metadataCache.on('resolved', () => this.refreshViews()));
 
 		this.app.workspace.onLayoutReady(() => {
@@ -111,13 +139,13 @@ export default class ShadowMeetingsPlugin extends Plugin {
 		}).open();
 	}
 
-	async activateView(): Promise<void> {
+	async activateView(type: string): Promise<void> {
 		const { workspace } = this.app;
-		let leaf = workspace.getLeavesOfType(VIEW_TYPE_MEETINGS)[0] ?? null;
+		let leaf = workspace.getLeavesOfType(type)[0] ?? null;
 		if (!leaf) {
 			leaf = workspace.getRightLeaf(false);
 			if (!leaf) return;
-			await leaf.setViewState({ type: VIEW_TYPE_MEETINGS, active: true });
+			await leaf.setViewState({ type, active: true });
 		}
 		await workspace.revealLeaf(leaf);
 	}
@@ -126,7 +154,9 @@ export default class ShadowMeetingsPlugin extends Plugin {
 		if (this.settings.listAddedOnce) return;
 		this.settings.listAddedOnce = true;
 		await this.saveData(this.settings);
-		if (this.app.workspace.getLeavesOfType(VIEW_TYPE_MEETINGS).length > 0) return;
-		await this.app.workspace.getRightLeaf(false)?.setViewState({ type: VIEW_TYPE_MEETINGS });
+		for (const type of [VIEW_TYPE_MEETINGS, VIEW_TYPE_CONTEXT]) {
+			if (this.app.workspace.getLeavesOfType(type).length > 0) continue;
+			await this.app.workspace.getRightLeaf(false)?.setViewState({ type });
+		}
 	}
 }

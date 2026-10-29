@@ -1,4 +1,5 @@
 export const VIEW_TYPE_MEETINGS = 'shadow-meetings-list';
+export const VIEW_TYPE_CONTEXT = 'shadow-meetings-context';
 
 // The Shadow Mac app registers this URL scheme. Opening any URL with it
 // brings the app to the front, or launches it.
