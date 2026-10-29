@@ -94,7 +94,7 @@ export default class ShadowMeetingsPlugin extends Plugin {
 	async openTodaysMeetings(): Promise<void> {
 		const { folders, meetings } = this.loadMeetings();
 		if (folders.length === 0) {
-			new Notice('No Shadow folder found in this vault. Check the Shadow Meetings settings.');
+			new Notice("No Shadow folder found in this vault. Check the folder in this plugin's settings.");
 			return;
 		}
 		const today = meetingsOnDate(meetings, localDateKey(new Date()));
