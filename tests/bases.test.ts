@@ -30,12 +30,23 @@ describe('buildMeetingsBase', () => {
 		expect(BASE_FILE_NAME).toBe('Shadow meetings.base');
 	});
 
-	it('has the three views', () => {
-		expect([...base.matchAll(/^ {4}name: '(.*)'$/gmu)].map((m) => m[1])).toEqual([
-			'All meetings',
-			'This week',
-			'People',
+	it('opens on the timeline and people cards, with the tables after them', () => {
+		expect([...base.matchAll(/^ {2}- type: (.*)\n {4}name: '(.*)'$/gmu)].map((m) => [m[1], m[2]])).toEqual([
+			['shadow-meetings-timeline', 'Timeline'],
+			['shadow-meetings-people', 'People'],
+			['table', 'All meetings'],
+			['table', 'This week'],
+			['table', 'People table'],
 		]);
+	});
+
+	it('filters the custom views to the same pages as the tables', () => {
+		expect(base).toContain(
+			`  - type: shadow-meetings-timeline\n    name: 'Timeline'\n    filters:\n      and:\n        - 'file.inFolder("Shadow/Meetings")'\n        - 'type == "meeting"'\n`,
+		);
+		expect(base).toContain(
+			`  - type: shadow-meetings-people\n    name: 'People'\n    filters:\n      and:\n        - 'file.inFolder("Shadow/People")'\n`,
+		);
 	});
 
 	it("reads only the Shadow folder's meeting and People pages", () => {

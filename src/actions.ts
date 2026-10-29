@@ -1,23 +1,14 @@
-import { App, moment, normalizePath, Notice, TFile, TFolder } from 'obsidian';
+import { App, moment, normalizePath, Notice, TFile } from 'obsidian';
 import { BASE_FILE_NAME, buildMeetingsBase } from './bases';
+import { BASES_VIEW_TIMELINE } from './constants';
 import { insertMeetingLines } from './daily-note';
-import { FolderPickerModal } from './folder-modal';
 import { localDateKey, meetingsOnDate } from './meetings';
 import type ShadowMeetingsPlugin from './main';
 
-// The only two places the plugin writes: a new `.base` file in a folder the
-// user picks, and the user's daily note. Both run only from a command.
-
-const MANAGED_FOLDERS = ['Meetings', 'People', 'Unsynced Files', 'Archived Vaults', '.shadow'];
-
-function isManagedFolder(path: string, shadowFolders: string[]): boolean {
-	return shadowFolders.some((root) =>
-		MANAGED_FOLDERS.some((name) => {
-			const managed = root ? `${root}/${name}` : name;
-			return path === managed || path.startsWith(`${managed}/`);
-		}),
-	);
-}
+// The only two places the plugin writes: a new `.base` file at the vault root,
+// and the user's daily note. Both run only from a command. Shadow manages only
+// `SHADOW.md`, `.shadow`, `Meetings` and `People` in its folder, so a file at
+// the vault root never meets Shadow's sync.
 
 interface InternalPlugins {
 	internalPlugins?: { getPluginById(id: string): { enabled?: boolean; instance?: { options?: DailyNoteOptions } } | null };
@@ -33,32 +24,28 @@ export function basesAvailable(app: App): boolean {
 	return (app as unknown as InternalPlugins).internalPlugins?.getPluginById('bases')?.enabled === true;
 }
 
-export function createMeetingViews(plugin: ShadowMeetingsPlugin): void {
+export async function createMeetingViews(plugin: ShadowMeetingsPlugin): Promise<void> {
 	const { app } = plugin;
 	if (!basesAvailable(app)) {
 		new Notice('Turn on the Bases core plugin first.');
 		return;
 	}
+	plugin.ensureBasesViews();
 	const { folders } = plugin.loadMeetings();
 	const shadowFolder = folders[0];
 	if (shadowFolder === undefined) {
 		new Notice("No Shadow folder found in this vault. Check the folder in this plugin's settings.");
 		return;
 	}
-	new FolderPickerModal(
-		app,
-		(folder) => isManagedFolder(folder.path, folders),
-		(folder) => {
-			void writeBaseFile(app, folder, shadowFolder);
-		},
-	).open();
-}
-
-async function writeBaseFile(app: App, folder: TFolder, shadowFolder: string): Promise<void> {
-	const path = normalizePath(folder.isRoot() ? BASE_FILE_NAME : `${folder.path}/${BASE_FILE_NAME}`);
+	const path = normalizePath(BASE_FILE_NAME);
 	const existing = app.vault.getFileByPath(path);
 	if (existing) {
-		new Notice(`${BASE_FILE_NAME} already exists in that folder, so I opened it.`);
+		const text = await app.vault.cachedRead(existing);
+		new Notice(
+			text.includes(`type: ${BASES_VIEW_TIMELINE}`)
+				? `Opened ${BASE_FILE_NAME} at the vault root.`
+				: `Opened ${BASE_FILE_NAME} at the vault root. It was made by an earlier version and has no timeline. To get the new views, delete it and run this command again.`,
+		);
 		await app.workspace.getLeaf(false).openFile(existing);
 		return;
 	}

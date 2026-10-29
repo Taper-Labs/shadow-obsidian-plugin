@@ -47,7 +47,7 @@ function resolve(app: App, link: string, sourcePath: string): TFile | null {
 	return app.metadataCache.getFirstLinkpathDest(link.split('#')[0] ?? link, sourcePath);
 }
 
-function meetingFromFile(app: App, file: TFile): Meeting | null {
+export function meetingFromFile(app: App, file: TFile): Meeting | null {
 	const cache = app.metadataCache.getFileCache(file);
 	if (!cache?.frontmatter) return null;
 	const people: PersonRef[] = [];

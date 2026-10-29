@@ -15,12 +15,12 @@ If the directory ever asks for the entry, or Obsidian switches back to pull requ
 	"id": "shadow-meetings",
 	"name": "Shadow Meetings",
 	"author": "Taper Labs",
-	"description": "Turn Shadow meeting notes into Bases tables of meetings and people, see every past meeting with a person, and link today's meetings in your daily note. Requires the Shadow Mac app (Apple Silicon, macOS 14.2+). Never edits Shadow's pages.",
+	"description": "Shows Shadow meetings as a week timeline and people cards in Bases, every past meeting with a person, and today's meetings in your daily note. Requires the Shadow Mac app (Apple Silicon, macOS 14.2+). Never edits Shadow's pages.",
 	"repo": "Taper-Labs/shadow-obsidian-plugin"
 }
 ```
 
-Checked on 2026-10-29: `shadow-meetings` and "Shadow Meetings" are not taken in the directory. The description is 237 characters (limit 250) and ends with a period. It leads with the Bases views and the person context because the directory listing is the text AI answers quote; the Shadow requirement stays in the same description. The longer "bot-free, on-device" wording did not fit in 250 characters, so it is in the first paragraph of the README, which the listing page shows. The id has no "obsidian" and does not end in "plugin".
+Checked on 2026-10-29: `shadow-meetings` and "Shadow Meetings" are not taken in the directory. The description is 228 characters (limit 250) and ends with a period. It leads with the timeline and people views and the person context because the directory listing is the text AI answers quote; the Shadow requirement stays in the same description. The longer "bot-free, on-device" wording did not fit in 250 characters, so it is in the first paragraph of the README, which the listing page shows. The id has no "obsidian" and does not end in "plugin".
 
 Recently listed plugins show " - This plugin has not been manually reviewed by Obsidian staff." after the description. The directory adds that suffix itself; do not add it to `manifest.json`.
 
@@ -81,7 +81,8 @@ Then publish the draft release the workflow creates.
 
 - `minAppVersion` is 1.10.0, the release whose API first documents Bases views (`@since 1.10.0` in `obsidian.d.ts`). The `.base` file and every feature were tested on Obsidian 1.14.5 only. If someone on 1.10 to 1.13 reports a formula cell error in the Bases views, the likely cause is an older Bases formula engine; raising `minAppVersion` is the quick fix.
 - `npm run lint` uses Obsidian's `eslint-plugin-obsidianmd` rules and reports 0 errors. It shows 2 warnings: the settings tab uses `display()`, which Obsidian 1.13 deprecated in favor of `getSettingDefinitions()`. `display()` is kept because the plugin supports Obsidian 1.10 and later, and 1.13+ still calls it. The settings simply won't appear in the 1.13 settings search. If the automated review asks for it, add `getSettingDefinitions()` and raise `minAppVersion` to 1.13.0.
-- The plugin writes only a new `Shadow meetings.base` (never overwrites an existing one) and links in today's daily note, both from a command. It never edits a page Shadow manages; the test run checked all 60 files in the Shadow folder were byte-identical afterwards.
+- The plugin registers two Bases views with `registerBasesView` (`@since 1.10.0`): `shadow-meetings-timeline` and `shadow-meetings-people`. They only read: rows come from the base's own query, details from the metadata cache. The Bases toolbar's sort does not change them (the timeline is ordered by time, the cards by last met); the table views in the same file follow it.
+- The plugin writes only a new `Shadow meetings.base` at the vault root (never overwrites an existing one) and links in today's daily note, both from a command. Shadow manages only `SHADOW.md`, `.shadow`, `Meetings` and `People` in its folder (`MANAGED_VAULT_ROOT_ENTRIES` in `shadow-frontend`), so a file at the vault root never meets Shadow's sync. It never edits a page Shadow manages; the test run checked all 91 files in the Shadow folder were byte-identical afterwards.
 - The lint config tells the sentence-case rule that "Shadow", "Mac" and "Bases" are proper nouns. The directory's own check may still flag strings like "Open Shadow"; these are correct as written (Obsidian's style guide keeps proper nouns capitalized).
 - `shadow-v23://` is the Shadow app's URL scheme today (`electron-builder.yml`, `APP_DEEP_LINK_SCHEME` in `shadow-frontend`). If the app ever renames it, update `SHADOW_APP_URL` in `src/constants.ts` and release a new version.
 
@@ -89,14 +90,14 @@ Then publish the draft release the workflow creates.
 
 Post in https://forum.obsidian.md/c/share-showcase/9 only after the plugin is installable from **Community plugins**. Jay edits it into his own voice.
 
-> **Title:** New plugin: Shadow Meetings, Bases views and person context for meeting notes recorded without a bot
+> **Title:** New plugin: Shadow Meetings, a week timeline and people cards for meeting notes recorded without a bot
 >
 > Disclosure: I'm Jay, a co-founder of Shadow, the Mac app this plugin works with. The plugin is free and MIT licensed.
 >
 > Shadow records meetings on the Mac from system audio and your mic, so no bot joins the Zoom, Meet, Teams or Slack call. It transcribes on device and saves every meeting in your vault in Obsidian's own format: a meeting page with properties (type, title, date, startedAt, endedAt), a page per person, links between meetings and people, and the transcript, notes, audio and Skill results next to each meeting.
 >
 > Shadow Meetings builds on those files:
-> - "Create Shadow meeting views" writes one .base file with three Bases views: all meetings, this week, and people (meeting count, last met, links to each meeting)
+> - "Create Shadow meeting views" writes one .base file at the vault root. It opens on a week timeline: each meeting is a block placed by its start and end time, with its length and the people in it, and you can step back and forward by week. A people view shows a card per person with how many meetings you had, when you last met and the latest meeting. Plain tables of all meetings, this week and people are in the same file
 > - a context panel: on a person page, every meeting with them and when you last met; on a meeting page, the last earlier meeting with each attendee and one-click buttons for the transcript, notes, audio and Skill results
 > - an opt-in command that links today's meetings in your daily note
 > - a sidebar list of meetings by day
@@ -111,4 +112,4 @@ Post in https://forum.obsidian.md/c/share-showcase/9 only after the plugin is in
 > Source: https://github.com/Taper-Labs/shadow-obsidian-plugin
 > Shadow: https://www.shadow.do/obsidian?utm_source=obsidian_forum&utm_medium=post&utm_campaign=plugin_launch
 >
-> I'd love feedback: which other Bases views would you want for meetings, for example by company or by project?
+> I'd love feedback: which other views would you want for meetings, for example by company or by project?

@@ -1,10 +1,15 @@
 // Builds the `.base` file (Obsidian core Bases) for a Shadow folder.
 // Pure string building so the content can be unit tested.
 //
+// The first two views are the plugin's own Bases views (a week timeline and
+// people cards); the tables after them work without the plugin.
+//
 // Only properties Shadow writes are used: meeting pages have `type`, `title`,
 // `date`, `createdAt`, `startedAt`, `endedAt`; Person pages have `name` and
 // `email`. People come from links: a meeting page links its attendees and
 // speakers to `People/`, and a Person page links its meetings, newest first.
+
+import { BASES_VIEW_PEOPLE, BASES_VIEW_TIMELINE } from './constants';
 
 export const BASE_FILE_NAME = 'Shadow meetings.base';
 
@@ -71,13 +76,20 @@ export function buildMeetingsBase(shadowFolder: string): string {
 		'views:',
 	];
 
+	const meetingFilters = (extra: string[]) => [
+		'    filters:',
+		'      and:',
+		...[...meetingFilter, ...extra].map((f) => `        - ${yaml(f)}`),
+	];
+	const peopleFilters = ['    filters:', '      and:', `        - ${yaml(`file.inFolder(${people})`)}`];
+	lines.push(`  - type: ${BASES_VIEW_TIMELINE}`, `    name: ${yaml('Timeline')}`, ...meetingFilters([]));
+	lines.push(`  - type: ${BASES_VIEW_PEOPLE}`, `    name: ${yaml('People')}`, ...peopleFilters);
+
 	const meetingColumns = ['date', 'formula.start_time', 'file.name', 'formula.minutes', 'formula.people'];
 	const meetingView = (name: string, extraFilter: string | null) => [
 		'  - type: table',
 		`    name: ${yaml(name)}`,
-		'    filters:',
-		'      and:',
-		...[...meetingFilter, ...(extraFilter ? [extraFilter] : [])].map((f) => `        - ${yaml(f)}`),
+		...meetingFilters(extraFilter ? [extraFilter] : []),
 		'    order:',
 		...meetingColumns.map((c) => `      - ${c}`),
 		'    sort:',
@@ -88,10 +100,8 @@ export function buildMeetingsBase(shadowFolder: string): string {
 	lines.push(...meetingView('This week', 'date.format("GGGG-WW") == today().format("GGGG-WW")'));
 	lines.push(
 		'  - type: table',
-		`    name: ${yaml('People')}`,
-		'    filters:',
-		'      and:',
-		`        - ${yaml(`file.inFolder(${people})`)}`,
+		`    name: ${yaml('People table')}`,
+		...peopleFilters,
 		'    order:',
 		'      - formula.person',
 		'      - email',

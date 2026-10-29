@@ -1,5 +1,6 @@
 import { debounce, Notice, PaneType, Plugin, TFile } from 'obsidian';
-import { addTodaysMeetingsToDailyNote, createMeetingViews } from './actions';
+import { addTodaysMeetingsToDailyNote, basesAvailable, createMeetingViews } from './actions';
+import { registerShadowBasesViews } from './bases-views';
 import { SHADOW_APP_URL, VIEW_TYPE_CONTEXT, VIEW_TYPE_MEETINGS } from './constants';
 import { MeetingContextView } from './context-view';
 import { localDateKey, Meeting, meetingsOnDate } from './meetings';
@@ -10,6 +11,7 @@ import { MeetingsView } from './view';
 
 export default class ShadowMeetingsPlugin extends Plugin {
 	settings!: ShadowMeetingsSettings;
+	private basesViewsRegistered = false;
 
 	private readonly refreshViews = debounce(
 		() => {
@@ -29,6 +31,7 @@ export default class ShadowMeetingsPlugin extends Plugin {
 
 		this.registerView(VIEW_TYPE_MEETINGS, (leaf) => new MeetingsView(leaf, this));
 		this.registerView(VIEW_TYPE_CONTEXT, (leaf) => new MeetingContextView(leaf, this));
+		this.ensureBasesViews();
 
 		this.addRibbonIcon('app-window', 'Open Shadow', () => this.openShadowApp());
 
@@ -49,7 +52,9 @@ export default class ShadowMeetingsPlugin extends Plugin {
 		this.addCommand({
 			id: 'create-meeting-views',
 			name: 'Create Shadow meeting views',
-			callback: () => createMeetingViews(this),
+			callback: () => {
+				void createMeetingViews(this);
+			},
 		});
 		this.addCommand({
 			id: 'add-today-to-daily-note',
@@ -103,6 +108,12 @@ export default class ShadowMeetingsPlugin extends Plugin {
 	loadMeetings(): { folders: string[]; meetings: Meeting[] } {
 		const folders = resolveFolders(this.app, this.settings.shadowFolder);
 		return { folders, meetings: collectMeetings(this.app, folders) };
+	}
+
+	/** Registers the timeline and people Bases views once the Bases core plugin is on. */
+	ensureBasesViews(): void {
+		if (this.basesViewsRegistered || !basesAvailable(this.app)) return;
+		this.basesViewsRegistered = registerShadowBasesViews(this);
 	}
 
 	openShadowApp(): void {

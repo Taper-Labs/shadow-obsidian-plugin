@@ -116,3 +116,370 @@
 .shadow-meetings-person .shadow-meetings-meta {
 	white-space: normal;
 }
+
+/* Shadow timeline (Bases view) */
+
+.shadow-meetings-timeline {
+	--shadow-gutter: 52px;
+	--shadow-block-bg: color-mix(in srgb, var(--interactive-accent) 16%, var(--background-primary));
+	--shadow-block-bg-hover: color-mix(in srgb, var(--interactive-accent) 26%, var(--background-primary));
+	padding: var(--size-4-2) var(--size-4-3) var(--size-4-4);
+	font-size: var(--font-ui-small);
+}
+
+.shadow-meetings-timeline-toolbar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--size-4-2) var(--size-4-3);
+	margin-bottom: var(--size-4-3);
+}
+
+.shadow-meetings-timeline-nav {
+	display: flex;
+	align-items: center;
+	gap: var(--size-2-1);
+}
+
+.shadow-meetings-timeline-today {
+	font-size: var(--font-ui-smaller);
+}
+
+.shadow-meetings-timeline-range {
+	color: var(--text-normal);
+	font-size: var(--font-ui-medium);
+	font-weight: var(--font-semibold);
+}
+
+.shadow-meetings-timeline-summary {
+	color: var(--text-muted);
+	margin-left: auto;
+}
+
+.shadow-meetings-timeline-empty {
+	padding: var(--size-4-2) 0 var(--size-4-3);
+	color: var(--text-muted);
+}
+
+.shadow-meetings-timeline-scroll {
+	overflow-x: auto;
+}
+
+.shadow-meetings-timeline-grid {
+	display: grid;
+	grid-template-columns: var(--shadow-gutter) repeat(7, minmax(120px, 1fr));
+	min-width: calc(var(--shadow-gutter) + 7 * 120px);
+}
+
+.shadow-meetings-timeline-dayhead {
+	display: flex;
+	align-items: baseline;
+	gap: var(--size-2-2);
+	padding: var(--size-2-2) var(--size-4-2);
+	border-bottom: 1px solid var(--background-modifier-border);
+	color: var(--text-muted);
+}
+
+.shadow-meetings-timeline-daynum {
+	color: var(--text-normal);
+	font-size: var(--font-ui-medium);
+	font-weight: var(--font-semibold);
+}
+
+.shadow-meetings-timeline-dayhead.is-today .shadow-meetings-timeline-weekday,
+.shadow-meetings-timeline-dayhead.is-today .shadow-meetings-timeline-daynum {
+	color: var(--text-accent);
+}
+
+.shadow-meetings-timeline-gutter-label {
+	padding: var(--size-2-2) var(--size-2-2) 0 0;
+	color: var(--text-faint);
+	font-size: var(--font-ui-smaller);
+	text-align: right;
+}
+
+.shadow-meetings-timeline-untimed {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-2-1);
+	padding: var(--size-2-2);
+	border-left: 1px solid var(--background-modifier-border);
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.shadow-meetings-timeline-untimed-item {
+	padding: var(--size-2-1) var(--size-2-3);
+	border-radius: var(--radius-s);
+	background-color: var(--shadow-block-bg);
+	color: var(--text-normal);
+	font-size: var(--font-ui-smaller);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	cursor: var(--cursor);
+}
+
+.shadow-meetings-timeline-gutter {
+	position: relative;
+}
+
+.shadow-meetings-timeline-hour {
+	position: absolute;
+	right: var(--size-2-3);
+	transform: translateY(-50%);
+	color: var(--text-faint);
+	font-size: var(--font-ui-smaller);
+	white-space: nowrap;
+}
+
+.shadow-meetings-timeline-hour:first-child {
+	transform: none;
+}
+
+.shadow-meetings-timeline-day {
+	position: relative;
+	border-left: 1px solid var(--background-modifier-border);
+	background-image: repeating-linear-gradient(
+		to bottom,
+		var(--background-modifier-border) 0,
+		var(--background-modifier-border) 1px,
+		transparent 1px,
+		transparent var(--shadow-hour-height)
+	);
+}
+
+.shadow-meetings-timeline-day.is-today {
+	background-color: var(--background-secondary);
+}
+
+.shadow-meetings-timeline-now {
+	position: absolute;
+	left: 0;
+	right: 0;
+	z-index: 2;
+	border-top: 2px solid var(--color-red);
+	pointer-events: none;
+}
+
+.shadow-meetings-timeline-block {
+	position: absolute;
+	z-index: var(--shadow-lane, 1);
+	display: flex;
+	flex-direction: column;
+	gap: 1px;
+	margin-top: 1px;
+	padding: var(--size-2-1) var(--size-2-3);
+	overflow: hidden;
+	border-left: 3px solid var(--interactive-accent);
+	border-radius: var(--radius-s);
+	background-color: var(--shadow-block-bg);
+	box-shadow: 0 0 0 1px var(--background-primary);
+	color: var(--text-normal);
+	cursor: var(--cursor);
+	container-type: inline-size;
+}
+
+.shadow-meetings-timeline-block:hover,
+.shadow-meetings-timeline-block:focus-visible {
+	z-index: 10;
+	background-color: var(--shadow-block-bg-hover);
+}
+
+.shadow-meetings-timeline-block.is-open-ended {
+	border-bottom: 1px dashed var(--interactive-accent);
+	border-bottom-left-radius: 0;
+	border-bottom-right-radius: 0;
+}
+
+.shadow-meetings-timeline-block-title {
+	flex: none;
+	font-weight: var(--font-semibold);
+	line-height: var(--line-height-tight);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.shadow-meetings-timeline-block.is-tall .shadow-meetings-timeline-block-title {
+	display: -webkit-box;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 2;
+	white-space: normal;
+}
+
+.shadow-meetings-timeline-block.is-compact {
+	justify-content: center;
+	padding-top: 0;
+	padding-bottom: 0;
+}
+
+.shadow-meetings-timeline-block-line {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	line-height: var(--line-height-tight);
+}
+
+.shadow-meetings-timeline-block-line .shadow-meetings-timeline-block-time {
+	font-weight: var(--font-normal);
+}
+
+.shadow-meetings-timeline-block-time {
+	flex: none;
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.shadow-meetings-chips {
+	display: flex;
+	flex-wrap: nowrap;
+	gap: var(--size-2-1);
+	margin-top: var(--size-2-1);
+	overflow: hidden;
+}
+
+.shadow-meetings-chip {
+	flex: 0 1 auto;
+	min-width: 0;
+	padding: 0 var(--size-2-2);
+	border-radius: var(--radius-l);
+	background-color: var(--background-primary);
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+	line-height: 1.6;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.shadow-meetings-chip.is-count {
+	display: none;
+}
+
+@container (max-width: 150px) {
+	.shadow-meetings-chip {
+		display: none;
+	}
+
+	.shadow-meetings-chip.is-count {
+		display: inline;
+	}
+}
+
+.shadow-meetings-chip.is-more {
+	flex: none;
+	color: var(--text-faint);
+}
+
+/* Shadow people (Bases view) */
+
+.shadow-meetings-people {
+	padding: var(--size-4-3);
+}
+
+.shadow-meetings-people-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+	gap: var(--size-4-3);
+}
+
+.shadow-meetings-person-card {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-3);
+	padding: var(--size-4-3);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-m);
+	background-color: var(--background-primary);
+	cursor: var(--cursor);
+}
+
+.shadow-meetings-person-card:hover,
+.shadow-meetings-person-card:focus-visible {
+	border-color: var(--background-modifier-border-hover);
+	background-color: var(--background-modifier-hover);
+}
+
+.shadow-meetings-person-card-head {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-2);
+	min-width: 0;
+}
+
+.shadow-meetings-avatar {
+	flex: none;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 36px;
+	height: 36px;
+	border-radius: 50%;
+	background-color: hsl(var(--shadow-hue) 65% 50% / 0.18);
+	color: hsl(var(--shadow-hue) 60% 35%);
+	font-size: var(--font-ui-small);
+	font-weight: var(--font-semibold);
+}
+
+.theme-dark .shadow-meetings-avatar {
+	background-color: hsl(var(--shadow-hue) 65% 60% / 0.22);
+	color: hsl(var(--shadow-hue) 70% 78%);
+}
+
+.shadow-meetings-person-card-names {
+	min-width: 0;
+}
+
+.shadow-meetings-person-card-name {
+	color: var(--text-normal);
+	font-size: var(--font-ui-medium);
+	font-weight: var(--font-semibold);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.shadow-meetings-person-card-email {
+	color: var(--text-faint);
+	font-size: var(--font-ui-smaller);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.shadow-meetings-person-card-stats {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: var(--size-4-2);
+}
+
+.shadow-meetings-stat-value {
+	color: var(--text-normal);
+	font-size: var(--font-ui-medium);
+	font-weight: var(--font-semibold);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.shadow-meetings-stat-label {
+	color: var(--text-faint);
+	font-size: var(--font-ui-smaller);
+}
+
+.shadow-meetings-person-card-recent {
+	padding-top: var(--size-4-2);
+	border-top: 1px solid var(--background-modifier-border);
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.shadow-meetings-person-card-recent-label {
+	color: var(--text-faint);
+}

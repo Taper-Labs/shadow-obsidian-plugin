@@ -3,7 +3,7 @@
 	"name": "Shadow Meetings",
 	"version": "1.0.0",
 	"minAppVersion": "1.10.0",
-	"description": "Turn Shadow meeting notes into Bases tables of meetings and people, see every past meeting with a person, and link today's meetings in your daily note. Requires the Shadow Mac app (Apple Silicon, macOS 14.2+). Never edits Shadow's pages.",
+	"description": "Shows Shadow meetings as a week timeline and people cards in Bases, every past meeting with a person, and today's meetings in your daily note. Requires the Shadow Mac app (Apple Silicon, macOS 14.2+). Never edits Shadow's pages.",
 	"author": "Taper Labs",
 	"authorUrl": "https://www.shadow.do",
 	"isDesktopOnly": true

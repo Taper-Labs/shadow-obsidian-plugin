@@ -1,24 +1,27 @@
 # Shadow Meetings
 
-**Turn the meeting notes [Shadow](https://www.shadow.do) saves in your vault into Bases tables of meetings and people, see every past meeting with a person, and link today's meetings in your daily note. Requires the Shadow Mac app (Apple Silicon, macOS 14.2 or later), which records meetings without a bot and transcribes them on your Mac.**
+**See the meetings [Shadow](https://www.shadow.do) saves in your vault as a week timeline and people cards in Bases, every past meeting with a person, and today's meetings in your daily note. Requires the Shadow Mac app (Apple Silicon, macOS 14.2 or later), which records meetings without a bot and transcribes them on your Mac.**
 
 Shadow already writes every meeting in Obsidian's own format: a meeting page with properties, a page per person, links between meetings and people, and the transcript, notes, audio and Skill results next to each meeting. Shadow Meetings builds on exactly that. It never edits the pages Shadow manages.
 
 ## Features
 
-### Ready-made Bases views
+### Week timeline and people cards
 
-Run **Create Shadow meeting views** and pick a folder. The plugin writes one `Shadow meetings.base` file (Obsidian core Bases) with three views:
+Run **Create Shadow meeting views**. The plugin writes one `Shadow meetings.base` file (Obsidian core Bases) at the vault root and opens it.
 
-- **All meetings**: date, start time, meeting, length in minutes and the people in it, newest first.
-- **This week**: the same table for the current week.
-- **People**: every person with their number of meetings, the date you last met, and links to each meeting.
+- **Timeline**: the week at a glance. Each meeting is a block placed and sized by its start and end time, with its title, length and the people in it. Meetings at the same time sit side by side, a meeting with no end time yet shows a dashed edge, and a meeting with many people shows a few names and "+6". Step back and forward by week, or jump to today. Click a meeting to open it.
+- **People**: a card per person with the number of meetings you had together, when you last met and the latest meeting, met most recently first. Click a card to open the person's page.
 
-The views use only what Shadow writes: the `type`, `date`, `startedAt` and `endedAt` properties on meeting pages, `name` and `email` on person pages, and the links between them. The file is yours to change.
+The same file also has plain tables, which work without this plugin: **All meetings**, **This week** and **People table**. The views use only what Shadow writes: the `type`, `date`, `startedAt` and `endedAt` properties on meeting pages, `name` and `email` on person pages, and the links between them. The file is yours to change. The timeline and people views follow your light or dark theme.
 
-![All meetings view in Bases](docs/feature1-bases.png)
+![Timeline view, light theme](docs/timeline-light.png)
 
-![People view in Bases](docs/feature1-people.png)
+![Timeline view, dark theme](docs/timeline-dark.png)
+
+![People view, light theme](docs/people-light.png)
+
+![People view, dark theme](docs/people-dark.png)
 
 ### Person and meeting context
 
@@ -55,7 +58,7 @@ A sidebar list of every Shadow meeting, newest first, grouped under Today, Yeste
 - **A Shadow account is required.** You sign in to the Shadow app with a link sent to your email.
 - **Payment is optional.** The Free plan includes unlimited recording and transcription. AI notes need Shadow Plus, $12/month or $8/month billed yearly. The plugin itself is free and works the same on every plan.
 - **No network use.** The plugin makes no network requests and has no telemetry. It reads meeting and person pages from Obsidian's own index of the vault and never reads files outside it. "Open Shadow" hands a `shadow-v23://open` link to macOS, which opens the app on your Mac.
-- **What it writes.** Only two things, and only when you run the command: the `Shadow meetings.base` file in the folder you pick, and links in today's daily note. It never edits the pages Shadow manages (marked "Managed by Shadow"), so it cannot conflict with Shadow's sync.
+- **What it writes.** Only two things, and only when you run the command: the `Shadow meetings.base` file at the vault root, and links in today's daily note. If that file already exists, the command opens it and leaves it as it is. It never edits the pages Shadow manages (marked "Managed by Shadow"), so it cannot conflict with Shadow's sync.
 - **Desktop only**, because the Shadow app runs on macOS. The Bases views need the Bases core plugin.
 
 ## Setup
@@ -63,13 +66,13 @@ A sidebar list of every Shadow meeting, newest first, grouped under Today, Yeste
 1. Install Shadow and sign in.
 2. In Shadow, open **Settings → Meeting → Vault location** and choose this Obsidian vault, or a folder inside it.
 3. In Obsidian, install and enable **Shadow Meetings** from **Settings → Community plugins**. The meetings list and the context panel open in the right sidebar.
-4. Run **Create Shadow meeting views** from the command palette to add the Bases views.
+4. Run **Create Shadow meeting views** from the command palette to add the timeline and people views.
 
 ## Commands
 
 | Command | What it does |
 | --- | --- |
-| Create Shadow meeting views | Writes `Shadow meetings.base` into a folder you pick. |
+| Create Shadow meeting views | Writes `Shadow meetings.base` at the vault root and opens it, or opens the one already there. |
 | Show meeting context | Opens the context panel in the right sidebar. |
 | Add today's meetings to the daily note | Links today's meetings in today's daily note. Shown only when **Daily note links** is on. |
 | Show meetings list | Opens the meetings list in the right sidebar. |
