@@ -1,7 +1,7 @@
 {
 	"id": "shadow-meetings",
 	"name": "Shadow Meetings",
-	"version": "1.0.1",
+	"version": "1.0.2",
 	"minAppVersion": "1.10.0",
 	"description": "Shows meetings recorded by the Shadow Mac app, with their AI notes and transcripts, as a week timeline and people cards, plus every past meeting with a person and today's meetings in your daily note. Requires Shadow (Apple Silicon, macOS 14.2+).",
 	"author": "Taper Labs",
